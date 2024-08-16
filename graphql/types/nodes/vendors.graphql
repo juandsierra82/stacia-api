@@ -1,0 +1,5 @@
+type Vendor {
+  id: ID!
+  name: String!
+  mainContact: String!
+}
