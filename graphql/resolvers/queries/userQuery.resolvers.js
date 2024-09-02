@@ -1,21 +1,17 @@
+const prisma = require('../../prisma-client');
 
 module.exports = {
-    Query: {
-        users: ()=>{
-            return [
-                {
-                    id: 'someid',
-                    name: 'Juan',
-                    email: 'baolwen@gmail.com'
-                }
-            ]
-        },
-        user:(parent, {id})=>{
-            return {   
-                id,
-                name: 'Juan',
-                email: 'baolwen@gmail.com'      
-            }
-        }
-    }
-}
+  Query: {
+    users: async (parent, args) => {
+      const query = args;
+      const users = await prisma.user.findMany(args);
+      return users;
+    },
+    user: async (parent, { id }) => {
+      const user = await prisma.user.findUnique({
+        id,
+      });
+      return user;
+    },
+  },
+};

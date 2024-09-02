@@ -2,4 +2,7 @@ type User {
   id: ID!
   name: String!
   email: String!
+  admin: Boolean!
+  createdAt: DateTime!
+  updatedAt: DateTime!
 }

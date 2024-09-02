@@ -1,0 +1,70 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  name      String
+  email     String
+  admin     Boolean  @default(false)
+}
+
+model Unit {
+  id                 Int        @id @default(autoincrement())
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+  address            String
+  buildingPercentage Float?
+  residents          Resident[]
+  owners             Owner[]
+}
+
+model Owner {
+  id        Int        @id @default(autoincrement())
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  unit      Unit       @relation(fields: [unitId], references: [id])
+  unitId    Int
+  name      String
+  email     String?
+  phone     String?
+  Resident  Resident[]
+}
+
+model Resident {
+  id         Int      @id @default(autoincrement())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  unit       Unit     @relation(fields: [unitId], references: [id])
+  unitId     Int
+  name       String
+  email      String?
+  phone      String?
+  isOwner    Boolean  @default(true)
+  landLord   Owner?   @relation(fields: [landLordId], references: [id])
+  landLordId Int?
+}
+
+model Vendor {
+  id          Int      @id @default(autoincrement())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  name        String
+  mainContact String
+  email       String?
+  phone       String?
+  address     String?
+}
