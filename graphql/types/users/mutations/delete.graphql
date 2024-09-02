@@ -1,0 +1,3 @@
+type Mutation {
+  deleteUser(name: String, email: String, id: Int): User
+}
