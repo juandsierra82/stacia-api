@@ -2,7 +2,7 @@
 CREATE TYPE "OwnerRole" AS ENUM ('MEMBER', 'PRESIDENT', 'TREASURER', 'SECRETARY', 'BOARD_ASSOCIATE');
 
 -- CreateEnum
-CREATE TYPE "FeeType" AS ENUM ('MONTHLY', 'SPECIAL_ASSESSMENT', 'THIRD_PARTY', 'RULES_VIOLATION', 'REPARATION', 'OTHER');
+CREATE TYPE "FeeType" AS ENUM ('MONTHLY', 'SPECIAL_ASSESSMENT', 'THIRD_PARTY', 'RULES_VIOLATION', 'INTEREST_OWED', 'REPARATION', 'OTHER');
 
 -- CreateEnum
 CREATE TYPE "CommunicationMethod" AS ENUM ('EMAIL', 'CHAT', 'TEXT', 'CALL');
@@ -195,6 +195,7 @@ CREATE TABLE "Fee" (
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "schedule" TIMESTAMP(3)[],
     "payedAt" TIMESTAMP(3),
+    "amount" DOUBLE PRECISION,
     "owedById" INTEGER,
     "contact" TEXT NOT NULL,
     "notes" TEXT[],
@@ -202,6 +203,19 @@ CREATE TABLE "Fee" (
     "approvedOn" TIMESTAMP(3),
 
     CONSTRAINT "Fee_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Payment" (
+    "id" SERIAL NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "amount" DOUBLE PRECISION,
+    "feeId" INTEGER NOT NULL,
+    "notes" TEXT[],
+    "payedBy" TEXT NOT NULL,
+
+    CONSTRAINT "Payment_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -336,6 +350,9 @@ ALTER TABLE "BudgetItem" ADD CONSTRAINT "BudgetItem_budgetId_fkey" FOREIGN KEY (
 
 -- AddForeignKey
 ALTER TABLE "Fee" ADD CONSTRAINT "Fee_owedById_fkey" FOREIGN KEY ("owedById") REFERENCES "Unit"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Payment" ADD CONSTRAINT "Payment_feeId_fkey" FOREIGN KEY ("feeId") REFERENCES "Fee"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "_OwnerToUnit" ADD CONSTRAINT "_OwnerToUnit_A_fkey" FOREIGN KEY ("A") REFERENCES "Owner"("id") ON DELETE CASCADE ON UPDATE CASCADE;

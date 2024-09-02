@@ -222,12 +222,14 @@ model Fee {
   updatedAt     DateTime  @updatedAt
   schedule      DateTime[]
   payedAt       DateTime?
+  amount        Float?
   owedById      Int?
   owedBy        Unit?      @relation(fields: [owedById], references: [id]) 
   contact       String
   notes         String[]
   type          FeeType     @default(MONTHLY)
   approvedOn    DateTime?
+  payments      Payment[]
 }
 
 enum FeeType {
@@ -235,9 +237,23 @@ enum FeeType {
   SPECIAL_ASSESSMENT
   THIRD_PARTY
   RULES_VIOLATION
+  INTEREST_OWED
   REPARATION
   OTHER
 }
+
+model Payment {
+  id            Int       @id @default(autoincrement())
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  amount        Float?
+  feeId         Int
+  fee           Fee @relation(fields:[feeId], references: [id])
+  notes         String[]
+  payedBy       String
+}
+
+
 model SpecialAssessment {
   id              Int       @id @default(autoincrement())
   createdAt       DateTime  @default(now())
