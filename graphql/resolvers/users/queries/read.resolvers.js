@@ -9,7 +9,7 @@ module.exports = {
     },
     user: async (parent, { id }) => {
       const user = await prisma.user.findUnique({
-        id,
+        where: { id },
       });
       return user;
     },

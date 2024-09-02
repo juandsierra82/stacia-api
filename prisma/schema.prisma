@@ -6,6 +6,7 @@
 
 generator client {
   provider = "prisma-client-js"
+  previewFeatures = ["fullTextSearch"]
 }
 
 datasource db {
@@ -18,8 +19,10 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   name      String
-  email     String
+  email     String   @unique
   admin     Boolean  @default(false)
+  communications Communication[]
+  @@index([email])
 }
 
 model Unit {
@@ -30,32 +33,47 @@ model Unit {
   buildingPercentage Float?
   residents          Resident[]
   owners             Owner[]
+  fees               Fee[]
+  assessments        SpecialAssessment[]
 }
 
 model Owner {
-  id        Int        @id @default(autoincrement())
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-  unit      Unit       @relation(fields: [unitId], references: [id])
-  unitId    Int
-  name      String
-  email     String?
-  phone     String?
-  Resident  Resident[]
+  id          Int        @id @default(autoincrement())
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  units       Unit[]
+  role        OwnerRole  @default(MEMBER)
+  name        String
+  email       String?
+  phone       String?
+  partOfBoard Boolean   @default(false)
+  residents  Resident[]
+  documents  Document[]
+  communications Communication[]
+  @@index([email])
+}
+
+enum OwnerRole {
+  MEMBER
+  PRESIDENT
+  TREASURER
+  SECRETARY
+  BOARD_ASSOCIATE
 }
 
 model Resident {
-  id         Int      @id @default(autoincrement())
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id         Int       @id @default(autoincrement())
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
   unit       Unit     @relation(fields: [unitId], references: [id])
   unitId     Int
   name       String
   email      String?
   phone      String?
-  isOwner    Boolean  @default(true)
+  isOwner    Boolean   @default(true)
   landLord   Owner?   @relation(fields: [landLordId], references: [id])
   landLordId Int?
+  communications Communication[]
 }
 
 model Vendor {
@@ -67,4 +85,176 @@ model Vendor {
   email       String?
   phone       String?
   address     String?
+  invoices    Invoice[]
+  projectId   Int?
+  project     Project? @relation(fields:[projectId], references: [id])
+  communications Communication[]
+  budgetItemId  Int?
+  budgetItem    BudgetItem? @relation(fields: [budgetItemId], references: [id])
+}
+
+model Invoice {
+  id          Int       @id @default(autoincrement())
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  paidAt      DateTime
+  amount      Float
+  vendorId    Int
+  text        String
+  vendor      Vendor @relation(fields:[vendorId], references:[id])
+  budgetItemId Int?
+  budgetItem  BudgetItem? @relation(fields:[budgetItemId], references: [id])
+  specialAssessmentId Int?
+  specialAssessment SpecialAssessment? @relation(fields:[specialAssessmentId], references: [id])
+  documents   Document[]
+}
+
+model Document {
+  id          Int       @id @default(autoincrement())
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  invoiceId   Int?
+  ownerId     Int?
+  invoice     Invoice? @relation(fields:[invoiceId], references:[id])
+  owner       Owner? @relation(fields:[ownerId], references:[id])
+  taskId      Int?
+  task        Task? @relation(fields:[taskId], references: [id])
+  projectId   Int?
+  project     Project? @relation(fields:[projectId], references: [id])
+  specialAssessmentId Int?
+  specialAssessment SpecialAssessment? @relation(fields:[specialAssessmentId], references: [id])
+  url             String
+  name            String
+  description     String?
+  budgetSheetId   Int? @unique
+  budgetSheet     Budget? @relation(name: "BudgetSheet", fields:[budgetSheetId], references: [id])
+  budgetId        Int?
+  budget          Budget? @relation(fields:[budgetId], references: [id])
+  @@index([url])
+}
+
+model Project {
+  id          Int       @id @default(autoincrement())
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  startedAt   DateTime?
+  dueAt       DateTime?
+  completed   Boolean   @default(false)
+  title       String
+  description String?
+  vendors     Vendor[]
+  tasks       Task[]
+  documents   Document[]
+  budgetedCost Float?
+}
+
+model Task {
+  id          Int       @id @default(autoincrement())
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  name        String
+  description String?
+  completed   Boolean   @default(false)
+  dueAt       DateTime?
+  startedAt   DateTime?
+  projectId   Int
+  parents     Task[]    @relation("TaskGraph")
+  children    Task[]    @relation("TaskGraph")
+  project     Project   @relation(fields:[projectId], references:[id])
+  documents   Document[]
+  @@index([projectId])
+}
+
+model Communication {
+  id          Int       @id @default(autoincrement())
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  subject     String
+  content     String?
+  from        String
+  to          String
+  cc          String[]
+  userId      Int
+  user        User  @relation(fields:[userId], references:[id])
+  vendorId    Int?
+  vendor      Vendor? @relation(fields:[vendorId], references: [id])
+  ownerId     Int?
+  owners      Owner?  @relation(fields:[ownerId], references: [id])
+  residentId  Int?
+  residents   Resident? @relation(fields:[residentId], references: [id])
+  method      CommunicationMethod  @default(EMAIL)
+  specialAssessmentId Int?
+  specialAssessment SpecialAssessment? @relation(fields:[specialAssessmentId], references: [id])
+}
+
+model Budget {
+  id                  Int       @id @default(autoincrement())
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  year                Int
+  allocatedExpense    Float?
+  currentExpense      Float?
+  receivedIncome      Float?
+  expectedIncome      Float?
+  approvedOn          DateTime?
+  budgetItems         BudgetItem[]
+  sheet               Document?  @relation("BudgetSheet")
+  documents           Document[]          
+}
+
+model BudgetItem {
+  id            Int       @id @default(autoincrement())
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  allocated     Float?
+  received      Float?
+  current       Float?
+  budgetId      Int?
+  budget        Budget?  @relation(fields:[budgetId], references: [id])
+  discretionary Boolean @default(true)
+  vendors       Vendor[]
+  invoices      Invoice[]
+}
+
+model Fee {
+  id            Int       @id @default(autoincrement())
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  schedule      DateTime[]
+  payedAt       DateTime?
+  owedById      Int?
+  owedBy        Unit?      @relation(fields: [owedById], references: [id]) 
+  contact       String
+  notes         String[]
+  type          FeeType     @default(MONTHLY)
+  approvedOn    DateTime?
+}
+
+enum FeeType {
+  MONTHLY
+  SPECIAL_ASSESSMENT
+  THIRD_PARTY
+  RULES_VIOLATION
+  REPARATION
+  OTHER
+}
+model SpecialAssessment {
+  id              Int       @id @default(autoincrement())
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  approvedOn      DateTime
+  paymentSchedule DateTime[]
+  invoices        Invoice[]
+  documents       Document[]
+  communications  Communication[]
+  total           Float?
+  received        Float?
+  units           Unit[]
+}
+
+enum CommunicationMethod {
+  EMAIL
+  CHAT
+  TEXT
+  CALL
 }
