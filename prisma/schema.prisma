@@ -21,8 +21,35 @@ model User {
   name      String
   email     String   @unique
   admin     Boolean  @default(false)
+  avatarUrl String?
   communications Communication[]
   @@index([email])
+}
+
+model Building {
+  id                 Int        @id @default(autoincrement())
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+  address1           String     @unique
+  address2           String?
+  name               String
+  dateFounded        DateTime?
+  city               String
+  municipality       String
+  country            String     @default("US")
+  postalCode         String
+  avatarUrl          String?
+  description        String?
+  documents          Document[]
+  projects           Project[]
+  units              Unit[]
+  owners             Owner[]
+  vendors            Vendor[]
+  communications     Communication[]
+  budgets            Budget[]
+  assessments        SpecialAssessment[]
+  @@index([name, address1])
+  @@index([address1])
 }
 
 model Unit {
@@ -30,27 +57,84 @@ model Unit {
   createdAt          DateTime   @default(now())
   updatedAt          DateTime   @updatedAt
   address            String
+  buildingId         Int
+  building           Building  @relation(fields:[buildingId], references: [id])
   buildingPercentage Float?
   residents          Resident[]
   owners             Owner[]
   fees               Fee[]
   assessments        SpecialAssessment[]
+  parkingSpots       Parking[]
+  @@index([address, buildingId])
+}
+
+model Parking {
+  id                 Int        @id @default(autoincrement())
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+  location           String
+  unitId             Int
+  cars               Car[]
+  unit               Unit       @relation(fields:[unitId], references: [id])
+  residents          Resident[]
+}
+
+model Car {
+  id                 Int        @id @default(autoincrement())
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+  make               String
+  color              String
+  licensePlate       String
+  parkingId          Int
+  parkingSpot        Parking @relation(fields: [parkingId], references: [id]) 
 }
 
 model Owner {
-  id          Int        @id @default(autoincrement())
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  units       Unit[]
-  role        OwnerRole  @default(MEMBER)
-  name        String
-  email       String?
-  phone       String?
-  partOfBoard Boolean   @default(false)
-  residents  Resident[]
-  documents  Document[]
-  communications Communication[]
+  id                Int        @id @default(autoincrement())
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+  buildingId        Int
+  building          Building  @relation(fields:[buildingId], references: [id])
+  units             Unit[]
+  role              OwnerRole  @default(MEMBER)
+  name              String
+  birthDate         DateTime?
+  avatarUrl         String?
+  email             String?
+  phone             String?
+  partOfBoard       Boolean   @default(false)
+  proxies           String[]
+  residents         Resident[]
+  documents         Document[]
+  communications    Communication[]
+  committees        Committee[]
+  approvedInvoices  Invoice[]
+  approvedVendors   Vendor[]
+  approvedProjects  Project[]
+  approvedBudgets   Budget[]
+  approvedFees      Fee[]
+  approvedSpecialAssessment SpecialAssessment[]
+  contactCards      ContactCard[]
   @@index([email])
+}
+
+model ContactCard {
+  id                Int        @id @default(autoincrement())
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+  contactName       String
+  address1          String?
+  address2          String?
+  city              String?
+  municipality      String?
+  muncipalCode      String?
+  country           String?
+  email             String?
+  phone             String?
+  primary           Boolean    @default(false)
+  ownerId           Int?      
+  owner             Owner?     @relation(fields: [ownerId], references: [id])
 }
 
 enum OwnerRole {
@@ -73,7 +157,9 @@ model Resident {
   isOwner    Boolean   @default(true)
   landLord   Owner?   @relation(fields: [landLordId], references: [id])
   landLordId Int?
+  avatarUrl   String?
   communications Communication[]
+  parkingSpots  Parking[]
 }
 
 model Vendor {
@@ -81,16 +167,21 @@ model Vendor {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   name        String
+  avatarUrl   String?
   mainContact String
   email       String?
   phone       String?
   address     String?
   invoices    Invoice[]
+  preferred   Boolean  @default(false)
   projectId   Int?
   project     Project? @relation(fields:[projectId], references: [id])
   communications Communication[]
   budgetItemId  Int?
   budgetItem    BudgetItem? @relation(fields: [budgetItemId], references: [id])
+  buildingId         Int?
+  building           Building?  @relation(fields:[buildingId], references: [id])
+  approvers     Owner[]
 }
 
 model Invoice {
@@ -107,7 +198,27 @@ model Invoice {
   specialAssessmentId Int?
   specialAssessment SpecialAssessment? @relation(fields:[specialAssessmentId], references: [id])
   documents   Document[]
+  approvers   Owner[]
 }
+
+model Committee {
+  id          Int       @id @default(autoincrement())
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  type        CommitteeType @default(BOARD)
+  description String?
+  admin       Boolean  @default(true)
+  members     Owner[]
+}
+
+enum CommitteeType {
+  BOARD
+  GRIEVANCE
+  BUDGET
+  SPECIAL
+  OTHER
+}
+
 
 model Document {
   id          Int       @id @default(autoincrement())
@@ -125,13 +236,23 @@ model Document {
   specialAssessment SpecialAssessment? @relation(fields:[specialAssessmentId], references: [id])
   url             String
   name            String
+  type            DocumentType @default(TEXT)
   description     String?
   budgetSheetId   Int? @unique
   budgetSheet     Budget? @relation(name: "BudgetSheet", fields:[budgetSheetId], references: [id])
   budgetId        Int?
   budget          Budget? @relation(fields:[budgetId], references: [id])
+  buildingId      Int?
+  building        Building?  @relation(fields:[buildingId], references: [id])
   @@index([url])
 }
+
+enum DocumentType {
+  PICTURE
+  VIDEO
+  TEXT
+}
+
 
 model Project {
   id          Int       @id @default(autoincrement())
@@ -145,7 +266,10 @@ model Project {
   vendors     Vendor[]
   tasks       Task[]
   documents   Document[]
+  approvers   Owner[]
   budgetedCost Float?
+  buildingId         Int
+  building           Building  @relation(fields:[buildingId], references: [id])
 }
 
 model Task {
@@ -185,13 +309,19 @@ model Communication {
   method      CommunicationMethod  @default(EMAIL)
   specialAssessmentId Int?
   specialAssessment SpecialAssessment? @relation(fields:[specialAssessmentId], references: [id])
+  buildingId         Int?
+  building           Building?  @relation(fields:[buildingId], references: [id])
 }
 
 model Budget {
   id                  Int       @id @default(autoincrement())
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
+  buildingId         Int
+  building           Building  @relation(fields:[buildingId], references: [id])
   year                Int
+  fiscalStart         DateTime
+  fiscalEnd           DateTime
   allocatedExpense    Float?
   currentExpense      Float?
   receivedIncome      Float?
@@ -199,7 +329,8 @@ model Budget {
   approvedOn          DateTime?
   budgetItems         BudgetItem[]
   sheet               Document?  @relation("BudgetSheet")
-  documents           Document[]          
+  documents           Document[]
+  approvers           Owner[]          
 }
 
 model BudgetItem {
@@ -224,21 +355,23 @@ model Fee {
   payedAt       DateTime?
   amount        Float?
   owedById      Int?
-  owedBy        Unit?      @relation(fields: [owedById], references: [id]) 
+  owedBy        Unit?      @relation(fields: [owedById], references: [id])
   contact       String
   notes         String[]
   type          FeeType     @default(MONTHLY)
   approvedOn    DateTime?
   payments      Payment[]
+  approvers     Owner[]
+  @@index([owedById])
 }
 
 enum FeeType {
   MONTHLY
-  SPECIAL_ASSESSMENT
   THIRD_PARTY
   RULES_VIOLATION
   INTEREST_OWED
   REPARATION
+  APPLIED_TO_RESIDENT
   OTHER
 }
 
@@ -250,7 +383,9 @@ model Payment {
   feeId         Int
   fee           Fee @relation(fields:[feeId], references: [id])
   notes         String[]
-  payedBy       String
+  paidBy       String
+  @@index([paidBy])
+  @@index([feeId])
 }
 
 
@@ -258,6 +393,8 @@ model SpecialAssessment {
   id              Int       @id @default(autoincrement())
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
+  buildingId      Int
+  building        Building  @relation(fields:[buildingId], references: [id])
   approvedOn      DateTime
   paymentSchedule DateTime[]
   invoices        Invoice[]
@@ -266,6 +403,7 @@ model SpecialAssessment {
   total           Float?
   received        Float?
   units           Unit[]
+  approvers       Owner[]
 }
 
 enum CommunicationMethod {
