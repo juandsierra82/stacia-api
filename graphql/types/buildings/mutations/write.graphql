@@ -1,0 +1,7 @@
+type Mutation {
+  upsertBuilding(
+    create: BuildingDataInput
+    where: BuildingWhereInput
+    update: BuildingDataInput
+  ): Building
+}

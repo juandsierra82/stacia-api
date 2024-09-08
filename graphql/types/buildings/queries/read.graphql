@@ -1,0 +1,4 @@
+type Query {
+  buildings(name: String): [Building]
+  building(id: Int!): Building
+}

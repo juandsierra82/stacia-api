@@ -1,0 +1,14 @@
+type Building {
+  id: ID!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  name: String!
+  address1: String!
+  address2: String
+  dateFounded: DateTime
+  city: String!
+  municipality: String!
+  postalCode: String
+  country: String!
+  description: String
+}

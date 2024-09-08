@@ -1,0 +1,4 @@
+input BuildingWhereInput {
+  id: ID
+  address1: String
+}
