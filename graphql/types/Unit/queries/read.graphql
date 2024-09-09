@@ -1,0 +1,4 @@
+type Query {
+  units(buidlingId: Int): [Unit]
+  unit(id: Int!): Unit
+}

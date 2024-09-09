@@ -1,3 +1,5 @@
+const prisma = require('../../prisma-client');
+
 module.exports = {
   Building: {
     id: (building, context, info) => building.id,
@@ -12,5 +14,14 @@ module.exports = {
     country: (building, context, info) => building.country,
     postalCode: (building, context, info) => building.postalCode,
     description: (building, context, info) => building.description,
+    units: async (building, context, info) => {
+      const units = await prisma.unit.findMany({
+        where: {
+          buildingId: building.id,
+        },
+      });
+      console.log('the units', units);
+      return units;
+    },
   },
 };

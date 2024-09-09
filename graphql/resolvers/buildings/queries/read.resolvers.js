@@ -7,7 +7,7 @@ module.exports = {
       const buildings = await prisma.building.findMany(args);
       return buildings;
     },
-    user: async (parent, { id }) => {
+    building: async (parent, { id }) => {
       const building = await prisma.building.findUnique({
         where: { id },
       });

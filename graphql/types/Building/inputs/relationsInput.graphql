@@ -1,0 +1,4 @@
+input UnitRelationsInput {
+  createMany: UnitDataWithoutRelationsInput
+  deleteMany: [UnitUniqueWhereInput]
+}

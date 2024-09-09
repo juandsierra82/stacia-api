@@ -1,0 +1,15 @@
+input UnitDataInput {
+  address: String!
+}
+
+input UnitUniqueWhereInput {
+  id: Int
+}
+
+input UnitUniqueCreateInput {
+  create: UnitDataWithoutRelationsInput
+}
+
+input UnitDataWithoutRelationsInput {
+  data: [UnitDataInput]
+}
