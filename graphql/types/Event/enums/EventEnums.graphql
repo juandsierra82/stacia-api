@@ -1,0 +1,12 @@
+enum EventType {
+  DUE_DATE
+  START_DATE
+}
+
+enum EventFrequency {
+  ONE_TIME
+  DAILY
+  MONTHLY
+  QUARTERLY
+  YEARLY
+}

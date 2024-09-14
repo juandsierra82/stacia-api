@@ -1,0 +1,12 @@
+type Owner {
+  id: Int!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  building: Building
+  name: String
+  birthDate: DateTime
+  avatarUrl: String
+  email: String
+  phone: String
+  partOfBoard: Boolean
+}

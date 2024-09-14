@@ -1,7 +1,10 @@
 type Unit {
   id: Int
   address: String!
+  buildingPercentage: Float
   building: Building!
+  owners: [Owner]
+  fees: [Fee]
   createdAt: DateTime!
   updatedAt: DateTime!
 }

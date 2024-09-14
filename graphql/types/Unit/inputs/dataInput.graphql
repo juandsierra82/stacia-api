@@ -1,5 +1,7 @@
 input UnitDataInput {
   address: String!
+  buildingPercentage: Float
+  owners: [Owner]
 }
 
 input UnitUniqueWhereInput {

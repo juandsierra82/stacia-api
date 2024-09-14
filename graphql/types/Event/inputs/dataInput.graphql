@@ -1,0 +1,4 @@
+input EventDataInput {
+  date: DateTime!
+  name: String
+}

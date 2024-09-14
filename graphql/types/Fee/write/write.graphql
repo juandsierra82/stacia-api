@@ -1,0 +1,5 @@
+type Mutation {
+  createFee(data: FeeDataInput!): Fee
+  updateFee(data: FeeDataInput!, where: FeeWhereInput): Fee
+  deleteFee(where: FeeWhereInput!): Fee
+}

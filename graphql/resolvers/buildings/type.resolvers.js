@@ -20,7 +20,6 @@ module.exports = {
           buildingId: building.id,
         },
       });
-      console.log('the units', units);
       return units;
     },
   },

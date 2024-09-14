@@ -160,6 +160,7 @@ model Resident {
   avatarUrl   String?
   communications Communication[]
   parkingSpots  Parking[]
+  fees          Fee[]
 }
 
 model Vendor {
@@ -348,25 +349,57 @@ model BudgetItem {
 }
 
 model Fee {
-  id            Int       @id @default(autoincrement())
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  schedule      DateTime[]
-  payedAt       DateTime?
-  amount        Float?
-  owedById      Int?
-  owedBy        Unit?      @relation(fields: [owedById], references: [id])
-  contact       String
-  notes         String[]
-  type          FeeType     @default(MONTHLY)
-  approvedOn    DateTime?
-  payments      Payment[]
-  approvers     Owner[]
-  @@index([owedById])
+  id                Int       @id @default(autoincrement())
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  schedule          DateTime[]
+  payedAt           DateTime?
+  amount            Float?
+  owedByUnitId      Int?
+  owedByUnit        Unit?      @relation(fields: [owedByUnitId], references: [id])
+  owedByResidentId  Int?
+  owedByResident    Resident? @relation(fields: [owedByResidentId], references: [id])
+  contact           String
+  notes             String[]
+  type              FeeType     @default(MAINTENANCE)
+  approvedOn        DateTime?
+  payments          Payment[]
+  dueAtId           Int
+  dueDate           Event? @relation(fields: [dueAtId], references: [id])
+  approvers         Owner[]
+  isTemplate        Boolean     @default(false)
+  @@index([owedByUnitId])
+  @@index([owedByResidentId])
+}
+
+model Event {
+  id                Int       @id @default(autoincrement())
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  date              DateTime
+  frequency         EventFrequency @default(MONTHLY)
+  name              String?
+  notes             String?
+  isTemplate        Boolean @default(false)
+  type              EventType @default(DUE_DATE)
+  fees              Fee[]
+}
+
+enum EventType {
+  DUE_DATE
+  START_DATE
+}
+
+enum EventFrequency {
+  ONE_TIME
+  DAILY
+  MONTHLY
+  QUARTERLY
+  YEARLY
 }
 
 enum FeeType {
-  MONTHLY
+  MAINTENANCE
   THIRD_PARTY
   RULES_VIOLATION
   INTEREST_OWED
@@ -383,11 +416,47 @@ model Payment {
   feeId         Int
   fee           Fee @relation(fields:[feeId], references: [id])
   notes         String[]
-  paidBy       String
-  @@index([paidBy])
+  payerId       Int
+  payer         Payer @relation(fields:[payerId], references: [id])
+  methodId      Int
+  method        PaymentMethod @relation(fields:[methodId], references: [id]) 
+  @@index([payerId])
   @@index([feeId])
 }
 
+model PaymentMethod {
+  id            Int       @id @default(autoincrement())
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  isPrimary     Boolean   @default(true)
+  paymentId     Int
+  payments      Payment[]
+  methodType    PaymentMethodType @default(ACH)
+  details       Json
+  @@index([paymentId])
+}
+
+enum PaymentMethodType {
+  ACH
+  CHECK
+  EPAYMENT
+  CREDIT_CARD
+  CASH_CHECK
+}
+
+model Payer {
+  id                Int       @id @default(autoincrement())
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  name              String
+  email             String?
+  address1          String?
+  address2          String?
+  city              String?
+  municipality      String?
+  phone             String?
+  payments          Payment[]
+}
 
 model SpecialAssessment {
   id              Int       @id @default(autoincrement())

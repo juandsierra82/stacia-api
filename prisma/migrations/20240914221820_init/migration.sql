@@ -8,7 +8,16 @@ CREATE TYPE "CommitteeType" AS ENUM ('BOARD', 'GRIEVANCE', 'BUDGET', 'SPECIAL', 
 CREATE TYPE "DocumentType" AS ENUM ('PICTURE', 'VIDEO', 'TEXT');
 
 -- CreateEnum
-CREATE TYPE "FeeType" AS ENUM ('MONTHLY', 'THIRD_PARTY', 'RULES_VIOLATION', 'INTEREST_OWED', 'REPARATION', 'APPLIED_TO_RESIDENT', 'OTHER');
+CREATE TYPE "EventType" AS ENUM ('DUE_DATE', 'START_DATE');
+
+-- CreateEnum
+CREATE TYPE "EventFrequency" AS ENUM ('ONE_TIME', 'DAILY', 'MONTHLY', 'QUARTERLY', 'YEARLY');
+
+-- CreateEnum
+CREATE TYPE "FeeType" AS ENUM ('MAINTENANCE', 'THIRD_PARTY', 'RULES_VIOLATION', 'INTEREST_OWED', 'REPARATION', 'APPLIED_TO_RESIDENT', 'OTHER');
+
+-- CreateEnum
+CREATE TYPE "PaymentMethodType" AS ENUM ('ACH', 'CHECK', 'EPAYMENT', 'CREDIT_CARD', 'CASH_CHECK');
 
 -- CreateEnum
 CREATE TYPE "CommunicationMethod" AS ENUM ('EMAIL', 'CHAT', 'TEXT', 'CALL');
@@ -294,13 +303,31 @@ CREATE TABLE "Fee" (
     "schedule" TIMESTAMP(3)[],
     "payedAt" TIMESTAMP(3),
     "amount" DOUBLE PRECISION,
-    "owedById" INTEGER,
+    "owedByUnitId" INTEGER,
+    "owedByResidentId" INTEGER,
     "contact" TEXT NOT NULL,
     "notes" TEXT[],
-    "type" "FeeType" NOT NULL DEFAULT 'MONTHLY',
+    "type" "FeeType" NOT NULL DEFAULT 'MAINTENANCE',
     "approvedOn" TIMESTAMP(3),
+    "dueAtId" INTEGER NOT NULL,
+    "isTemplate" BOOLEAN NOT NULL DEFAULT false,
 
     CONSTRAINT "Fee_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Event" (
+    "id" SERIAL NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "date" TIMESTAMP(3) NOT NULL,
+    "frequency" "EventFrequency" NOT NULL DEFAULT 'MONTHLY',
+    "name" TEXT,
+    "notes" TEXT,
+    "isTemplate" BOOLEAN NOT NULL DEFAULT false,
+    "type" "EventType" NOT NULL DEFAULT 'DUE_DATE',
+
+    CONSTRAINT "Event_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -311,9 +338,39 @@ CREATE TABLE "Payment" (
     "amount" DOUBLE PRECISION,
     "feeId" INTEGER NOT NULL,
     "notes" TEXT[],
-    "paidBy" TEXT NOT NULL,
+    "payerId" INTEGER NOT NULL,
+    "methodId" INTEGER NOT NULL,
 
     CONSTRAINT "Payment_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "PaymentMethod" (
+    "id" SERIAL NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "isPrimary" BOOLEAN NOT NULL DEFAULT true,
+    "paymentId" INTEGER NOT NULL,
+    "methodType" "PaymentMethodType" NOT NULL DEFAULT 'ACH',
+    "details" JSONB NOT NULL,
+
+    CONSTRAINT "PaymentMethod_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Payer" (
+    "id" SERIAL NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "name" TEXT NOT NULL,
+    "email" TEXT,
+    "address1" TEXT,
+    "address2" TEXT,
+    "city" TEXT,
+    "municipality" TEXT,
+    "phone" TEXT,
+
+    CONSTRAINT "Payer_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -427,13 +484,19 @@ CREATE INDEX "Document_url_idx" ON "Document"("url");
 CREATE INDEX "Task_projectId_idx" ON "Task"("projectId");
 
 -- CreateIndex
-CREATE INDEX "Fee_owedById_idx" ON "Fee"("owedById");
+CREATE INDEX "Fee_owedByUnitId_idx" ON "Fee"("owedByUnitId");
 
 -- CreateIndex
-CREATE INDEX "Payment_paidBy_idx" ON "Payment"("paidBy");
+CREATE INDEX "Fee_owedByResidentId_idx" ON "Fee"("owedByResidentId");
+
+-- CreateIndex
+CREATE INDEX "Payment_payerId_idx" ON "Payment"("payerId");
 
 -- CreateIndex
 CREATE INDEX "Payment_feeId_idx" ON "Payment"("feeId");
+
+-- CreateIndex
+CREATE INDEX "PaymentMethod_paymentId_idx" ON "PaymentMethod"("paymentId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "_ParkingToResident_AB_unique" ON "_ParkingToResident"("A", "B");
@@ -595,10 +658,22 @@ ALTER TABLE "Budget" ADD CONSTRAINT "Budget_buildingId_fkey" FOREIGN KEY ("build
 ALTER TABLE "BudgetItem" ADD CONSTRAINT "BudgetItem_budgetId_fkey" FOREIGN KEY ("budgetId") REFERENCES "Budget"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Fee" ADD CONSTRAINT "Fee_owedById_fkey" FOREIGN KEY ("owedById") REFERENCES "Unit"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "Fee" ADD CONSTRAINT "Fee_owedByUnitId_fkey" FOREIGN KEY ("owedByUnitId") REFERENCES "Unit"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Fee" ADD CONSTRAINT "Fee_owedByResidentId_fkey" FOREIGN KEY ("owedByResidentId") REFERENCES "Resident"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Fee" ADD CONSTRAINT "Fee_dueAtId_fkey" FOREIGN KEY ("dueAtId") REFERENCES "Event"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Payment" ADD CONSTRAINT "Payment_feeId_fkey" FOREIGN KEY ("feeId") REFERENCES "Fee"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Payment" ADD CONSTRAINT "Payment_payerId_fkey" FOREIGN KEY ("payerId") REFERENCES "Payer"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Payment" ADD CONSTRAINT "Payment_methodId_fkey" FOREIGN KEY ("methodId") REFERENCES "PaymentMethod"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "SpecialAssessment" ADD CONSTRAINT "SpecialAssessment_buildingId_fkey" FOREIGN KEY ("buildingId") REFERENCES "Building"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

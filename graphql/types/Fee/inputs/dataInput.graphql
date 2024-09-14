@@ -1,0 +1,6 @@
+input FeeDataInput {
+  notes: String
+  feeType: FeeType
+  amount: Float!
+  dueDate: EventDataInput!
+}
