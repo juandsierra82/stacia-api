@@ -1,0 +1,7 @@
+enum PaymentMethodType {
+  ACH
+  CHECK
+  EPAYMENT
+  CREDIT_CARD
+  CASH_CHECK
+}

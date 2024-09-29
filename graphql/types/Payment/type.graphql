@@ -1,0 +1,13 @@
+type Payment {
+  id: Int!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  amount: Float
+  notes: [String]
+  method: PaymentMethod
+  transactionId: String
+  paymentMethodId: Int
+  feeId: Int
+  fee: Fee
+  payer: String
+}

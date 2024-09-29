@@ -1,0 +1,10 @@
+type PaymentMethod {
+  id: Int!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  isPrimary: Boolean!
+  methodType: PaymentMethodType!
+  details: String
+  name: String
+  payments: [Payment]
+}

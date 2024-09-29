@@ -1,0 +1,7 @@
+input PaymentDataInput {
+  amount: Float
+  notes: [String]
+  methodId: Int
+  feeId: Int
+  payer: String
+}

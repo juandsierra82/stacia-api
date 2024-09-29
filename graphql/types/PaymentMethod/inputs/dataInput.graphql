@@ -1,0 +1,7 @@
+input PaymentMethodInput {
+  isPrimary: Boolean!
+  methodType: PaymentMethodType!
+  details: String
+  name: String
+  unitId: Int
+}

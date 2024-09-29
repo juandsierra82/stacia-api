@@ -1,0 +1,4 @@
+type Query {
+  payments(unitIds: [Int]): [Payment]
+  payment(id: Int!): Payment
+}
