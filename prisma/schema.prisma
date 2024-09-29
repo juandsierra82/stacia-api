@@ -15,15 +15,23 @@ datasource db {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  name      String
-  email     String   @unique
-  admin     Boolean  @default(false)
-  avatarUrl String?
+  id            Int      @id @default(autoincrement())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  name          String
+  email         String   @unique
+  role          UserRole @default(MEMBER)
+  units         String[]
+  preferredUnit String?
+  owners        String[]
+  avatarUrl     String?
   communications Communication[]
   @@index([email])
+}
+enum UserRole {
+  SUPER_ADMIN
+  MEMBER
+  BOARD_ADMIN
 }
 
 model Building {
@@ -65,6 +73,7 @@ model Unit {
   fees               Fee[]
   assessments        SpecialAssessment[]
   parkingSpots       Parking[]
+  paymentMethods     PaymentMethod[]
   @@index([address, buildingId])
 }
 
@@ -354,11 +363,12 @@ model Fee {
   updatedAt         DateTime  @updatedAt
   schedule          DateTime[]
   payedAt           DateTime?
+  name              String?
   amount            Float?
-  owedByUnitId      Int?
-  owedByUnit        Unit?      @relation(fields: [owedByUnitId], references: [id])
-  owedByResidentId  Int?
-  owedByResident    Resident? @relation(fields: [owedByResidentId], references: [id])
+  unitId            Int?
+  unit              Unit?      @relation(fields: [unitId], references: [id])
+  residentId        Int?
+  resident          Resident? @relation(fields: [residentId], references: [id])
   contact           String
   notes             String[]
   type              FeeType     @default(MAINTENANCE)
@@ -368,8 +378,9 @@ model Fee {
   dueDate           Event? @relation(fields: [dueAtId], references: [id])
   approvers         Owner[]
   isTemplate        Boolean     @default(false)
-  @@index([owedByUnitId])
-  @@index([owedByResidentId])
+  autoPay           Boolean     @default(true)
+  @@index([unitId])
+  @@index([residentId])
 }
 
 model Event {
@@ -412,16 +423,18 @@ model Payment {
   id            Int       @id @default(autoincrement())
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+  transactionId String    @unique @default(uuid())     
   amount        Float?
   feeId         Int
   fee           Fee @relation(fields:[feeId], references: [id])
   notes         String[]
   payerId       Int
-  payer         Payer @relation(fields:[payerId], references: [id])
+  payer         Json
   methodId      Int
   method        PaymentMethod @relation(fields:[methodId], references: [id]) 
   @@index([payerId])
   @@index([feeId])
+  @@index([transactionId])
 }
 
 model PaymentMethod {
@@ -433,6 +446,10 @@ model PaymentMethod {
   payments      Payment[]
   methodType    PaymentMethodType @default(ACH)
   details       Json
+  autoDrafted   Boolean   @default(false)
+  name          String
+  unitId        Int?
+  unit          Unit?  @relation(fields: [unitId], references: [id])
   @@index([paymentId])
 }
 
@@ -442,20 +459,6 @@ enum PaymentMethodType {
   EPAYMENT
   CREDIT_CARD
   CASH_CHECK
-}
-
-model Payer {
-  id                Int       @id @default(autoincrement())
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-  name              String
-  email             String?
-  address1          String?
-  address2          String?
-  city              String?
-  municipality      String?
-  phone             String?
-  payments          Payment[]
 }
 
 model SpecialAssessment {

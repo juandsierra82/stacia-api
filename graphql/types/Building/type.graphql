@@ -11,5 +11,5 @@ type Building {
   postalCode: String
   country: String!
   description: String
-  units: [Unit]
+  units: [Unit]!
 }

@@ -7,7 +7,7 @@ module.exports = {
       const fee = await prisma.fee.delete({
         where,
       });
-      return where;
+      return fee;
     },
   },
 };

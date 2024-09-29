@@ -3,9 +3,11 @@ type Fee {
   createdAt: DateTime!
   updatedAt: DateTime!
   payedAt: DateTime
+  name: String
   amount: Float
   unit: Unit
   notes: [String]
   type: FeeType!
   dueDate: Event
+  payments: [Payment]
 }

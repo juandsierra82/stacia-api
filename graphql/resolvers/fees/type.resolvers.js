@@ -9,6 +9,7 @@ module.exports = {
     notes: (fee, context, info) => fee.notes,
     type: (fee, context, info) => fee.type,
     amount: (fee, context, info) => fee.amount,
+    name: (fee, context, info) => fee.name,
     unit: async (fee, context, info) => {
       const { unit } = await prisma.fee.findUnique({
         where: {
